@@ -1,4 +1,4 @@
-namespace MyPastebin;
+namespace MyPastebin.Data.Models;
 
 public class WeatherForecast
 {

@@ -1,8 +1,12 @@
+using MyPastebin.Data.Interfaces;
+using MyPastebin.Data.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
 builder.Services.AddControllersWithViews();
+builder.Services.AddSingleton<IUserDb,  UserDbService>();
 
 var app = builder.Build();
 

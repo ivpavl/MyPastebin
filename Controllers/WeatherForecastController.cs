@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using MyPastebin.Data.Models;
 
 namespace MyPastebin.Controllers;
 
