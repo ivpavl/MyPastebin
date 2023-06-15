@@ -1,5 +1,6 @@
 import { Counter } from "./components/Counter";
-import Post from "./components/Post";
+import Post from "./components/Post.tsx";
+import Login from "./components/Login.tsx";
 import Home from "./components/Home";
 
 const AppRoutes = [
@@ -14,6 +15,10 @@ const AppRoutes = [
   {
     path: '/post',
     element: <Post />
+  },
+  {
+    path: '/login',
+    element: <Login />
   },
 ];
 

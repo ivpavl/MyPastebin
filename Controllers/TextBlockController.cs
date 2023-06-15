@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
-using MyPastebin.Data.Models.TextBlock;
+using MyPastebin.Data.Models.TextBlockModels;
+using MyPastebin.Data.Models.UserModels;
 using MyPastebin.Data.Interfaces;
+
 namespace MyPastebin.Controllers;
 
 [ApiController]
@@ -8,10 +10,11 @@ namespace MyPastebin.Controllers;
 public class TextBlockController : ControllerBase
 {
     private readonly IDataBase _dbService;
-    public TextBlockController(IDataBase dbService)
+    private readonly IUserService _userService;
+    public TextBlockController(IUserService userService, IDataBase dbService)
     {
+        _userService = userService;
         _dbService = dbService;
-
     }
 
 
@@ -23,18 +26,26 @@ public class TextBlockController : ControllerBase
             return new JsonResult(new {TextBlock = textBlock});
 
         return new JsonResult(new {TextBlock = "Nonetext"});
-        
     }
 
     [HttpPost]
     [Route("add")]
     public async Task<IActionResult> AddNewPost([FromBody] PostTextBlockRequest newPost)
     {
-        var textBlockToAdd = new NewTextBlock(newPost.UserName, text: newPost.TextBlock);
-        (bool IsSuccessful, string hashId) = await _dbService.AddNewPostAsync(textBlockToAdd);
+        User user = await _userService.EnsureUserCreated(userName: newPost.UserName);
+
+        var textBlockToAdd = new NewTextBlock(
+            userName: newPost.UserName, 
+            text: newPost.TextBlock,
+            user: user
+        );
+
+        (bool postAddingSuccessful, string hashId) = await _dbService.AddNewPostAsync(textBlockToAdd);
         
-        if(IsSuccessful)
+        if(postAddingSuccessful)
+        {
             return Ok(hashId);
+        }
 
         return StatusCode(StatusCodes.Status400BadRequest);
     }

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 function Post() {
   const [textBlock, setTextBlock] = useState('Loading...');
 
-  async function getPostById(postId) {
+  async function getPostById(postId:string) {
     try {
       let res = await fetch('textblock?id=' + postId, {
         method: 'GET',
@@ -28,7 +28,7 @@ function Post() {
 
   useEffect(() => {
     let params = new URLSearchParams(window.location.search);
-    let postId = params.get('id');
+    let postId:string = params.get('id') || '';
 
     if (postId) {
       getPostById(postId)

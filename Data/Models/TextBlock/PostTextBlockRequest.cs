@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace MyPastebin.Data.Models.TextBlock;
+namespace MyPastebin.Data.Models.TextBlockModels;
 
 public class PostTextBlockRequest
 {

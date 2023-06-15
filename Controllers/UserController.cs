@@ -1,5 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using MyPastebin.Data.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using MyPastebin.Data.Models.UserModels;
+using MyPastebin.Data.Interfaces;
+
 
 namespace MyPastebin.Controllers;
 
@@ -7,22 +11,41 @@ namespace MyPastebin.Controllers;
 [Route("[controller]")]
 public class UserController : ControllerBase
 {
-
-    public UserController()
+    private readonly IAuthService _auth;
+    public UserController(IAuthService auth)
     {
+        _auth = auth;
     }
+ 
 
     [HttpGet]
-    [Route("/")]
+    [Authorize]
+    [Route("")]
     public IActionResult GetUserInfo()
     {
-        throw new NotImplementedException();
+        return Ok(HttpContext?.User?.Identity?.Name ?? "None");
     }
+
     [HttpPost]
     [Route("login")]
-    public IActionResult Login()
+    public IActionResult Login([FromBody]AuthUserModel user)
     {
-        throw new NotImplementedException();
+        (bool isSuccessful, string jwtToken) = _auth.TryLoggingIn(user);
+        if(isSuccessful)
+            return Ok(new {JWTToken = jwtToken});
+
+        return BadRequest();
+    }
+
+    [HttpPost]
+    [Route("register")]
+    public IActionResult Register([FromBody]AuthUserModel user)
+    {
+        (bool isSuccessful, string jwtToken) = _auth.TryRegistering(user);
+        if(isSuccessful)
+            return Ok(new {JWTToken = jwtToken});
+
+        return BadRequest();
     }
 
     [HttpPost]
@@ -32,12 +55,6 @@ public class UserController : ControllerBase
         throw new NotImplementedException();
     }
 
-    [HttpPost]
-    [Route("register")]
-    public IActionResult Register()
-    {
-        throw new NotImplementedException();
-    }
 
     [HttpGet]
     [Route("postlist")]

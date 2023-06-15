@@ -5,6 +5,7 @@ function Home() {
   const [error, setError] = useState({errorOccured: false, errorMessage: ''});
   const userNameRef = useRef();
   const textBlockRef = useRef();
+  const jwtTokenInputForm = useRef();
 
   async function createNewTextBlock() {
     try {
@@ -32,6 +33,25 @@ function Home() {
     }
   }
 
+  async function getInfoUsingJWT() {
+    try {
+      let res = await fetch('/user/', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json;charset=utf-8',
+          'Authorization': 'Bearer ' + jwtTokenInputForm.current.value
+        }
+      });
+
+      let result = await res.json();
+      if (res.ok) {
+        return result;
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
 
   const handleCreateTextBlock = async (event) => {
     event.preventDefault();
@@ -43,6 +63,11 @@ function Home() {
     {
       console.log("No post id found!");
     }
+  }
+
+  const handleJWTAttempt = async (event) => {
+    event.preventDefault();
+    let postId = await getInfoUsingJWT();
   }
 
 
@@ -64,6 +89,14 @@ function Home() {
           placeholder='Your text'
           ref={textBlockRef}
         />
+        <button type='submit'>Submit!</button>
+      </form>
+
+      <form onSubmit = {handleJWTAttempt} className='createTextBox'>
+        <input type='text'
+          ref={jwtTokenInputForm}
+          placeholder='Your JWT TOKEN'
+          />
         <button type='submit'>Submit!</button>
       </form>
 
