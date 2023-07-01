@@ -1,13 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using MyPastebin.Data.Extensions;
 using MyPastebin.Data.Interfaces;
 using MyPastebin.Data.Services;
 using MyPastebin.Data.Static;
 using MyPastebin.Data;
 using Swashbuckle.AspNetCore.SwaggerUI;
-
-
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,12 +16,17 @@ builder.Services.AddDbContext<ApplicationContext>(options => {
     options.UseMySql(
         builder.Configuration.GetConnectionString("DefaultConnection"), 
         new MySqlServerVersion(new Version(8, 0, 31)));
-});
-builder.Services.AddTransient<IDataBase, DbServiceEF>();
+}, ServiceLifetime.Transient);
+
+builder.Services.AddTransient<ITextBlockService, TextBlockService>();
 builder.Services.AddTransient<IUserService, UserService>();
 builder.Services.AddTransient<IAuthService, AuthService>();
 
+builder.Services.AddTransient<ITextBlockGCHelper, TextblockGarbageCollectorHelper>();
+builder.Services.AddHostedService<TextblockGarbageCollectorService>();
+
 builder.Services.AddSwaggerGen();
+
 
 builder.Services.AddAuthorization();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -60,6 +64,8 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
+
+// app.UseCustomExceptionHandler();
 
 app.UseAuthentication();
 app.UseAuthorization();

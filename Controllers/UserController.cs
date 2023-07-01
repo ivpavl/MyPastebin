@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using MyPastebin.Data.Models.UserModels;
 using MyPastebin.Data.Interfaces;
 
@@ -11,41 +10,59 @@ namespace MyPastebin.Controllers;
 [Route("[controller]")]
 public class UserController : ControllerBase
 {
-    private readonly IAuthService _auth;
-    public UserController(IAuthService auth)
+    private readonly IAuthService _authService;
+     private readonly ITextBlockService _dbService;
+    private readonly IUserService _userService;
+    public UserController(IAuthService auth, IUserService userService, ITextBlockService dbService)
     {
-        _auth = auth;
+        _authService = auth;
+        _userService = userService;
+        _dbService = dbService;
     }
- 
 
     [HttpGet]
     [Authorize]
     [Route("")]
-    public IActionResult GetUserInfo()
+    public async Task<IActionResult> GetUserInfo()
     {
-        return Ok(HttpContext?.User?.Identity?.Name ?? "None");
+        var userName = (HttpContext?.User?.Identity?.Name) ?? throw new Exception("Authorized without username in claims");
+        var user = await _userService.GetUserAsync(userName) ?? throw new Exception("Authorized, but user not found");
+
+        // Mapper service?
+        // Mapper service?
+
+        var response = new UserInfoModel()
+        {
+            UserName = user.UserName,
+            UserIp = user.UserIp,
+        };
+
+        // Mapper service?
+        // Mapper service?
+
+        return Ok(response);
     }
 
     [HttpPost]
     [Route("login")]
     public IActionResult Login([FromBody]AuthUserModel user)
     {
-        (bool isSuccessful, string jwtToken) = _auth.TryLoggingIn(user);
-        if(isSuccessful)
-            return Ok(new {JWTToken = jwtToken});
+        (string token, int maxAge) = _authService.TryLoggingIn(user);
+        // if(token != string.Empty)
+        return Ok(new {Token = token, MaxAge = maxAge});
 
-        return BadRequest();
+        // return BadRequest();
     }
 
     [HttpPost]
     [Route("register")]
-    public IActionResult Register([FromBody]AuthUserModel user)
+    public async Task<IActionResult> Register([FromBody]AuthUserModel user)
     {
-        (bool isSuccessful, string jwtToken) = _auth.TryRegistering(user);
-        if(isSuccessful)
-            return Ok(new {JWTToken = jwtToken});
+        (string token, int maxAge) = await _authService.TryRegisteringAsync(user);
+        // if(token != string.Empty)
+        return Ok(new {Token = token, MaxAge = maxAge});
 
-        return BadRequest();
+        // return BadRequest();
     }
 
     [HttpPost]
@@ -57,9 +74,16 @@ public class UserController : ControllerBase
 
 
     [HttpGet]
+    [Authorize]
     [Route("postlist")]
     public IActionResult GetPostList()
     {
-        throw new NotImplementedException();
+        var userName = HttpContext?.User?.Identity?.Name ?? "";
+        if(_userService.IsUserExist(userName, out User user))
+        {
+            var postsList = _dbService.GetUserPosts(user);
+            return Ok(postsList);
+        }
+        throw new Exception("User logged in, but could not found in DB");
     }
 }

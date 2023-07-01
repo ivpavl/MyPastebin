@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using MyPastebin.Data.Models.TextBlockModels;
 using MyPastebin.Data.Models.UserModels;
 using MyPastebin.Data.Interfaces;
+using MyPastebin.Data.Services;
 
 namespace MyPastebin.Controllers;
 
@@ -9,9 +10,9 @@ namespace MyPastebin.Controllers;
 [Route("[controller]")]
 public class TextBlockController : ControllerBase
 {
-    private readonly IDataBase _dbService;
+    private readonly ITextBlockService _dbService;
     private readonly IUserService _userService;
-    public TextBlockController(IUserService userService, IDataBase dbService)
+    public TextBlockController(IUserService userService, ITextBlockService dbService)
     {
         _userService = userService;
         _dbService = dbService;
@@ -21,33 +22,42 @@ public class TextBlockController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> Get([FromQuery]GetTextBlockRequest request)
     {
-        (bool IsSuccessful, string textBlock) = await _dbService.GetPostTextAsync(request.HashId);
+        (bool IsSuccessful, TextBlock textBlock) = await _dbService.GetTextBlockAsync(request.HashId);
         if (IsSuccessful)
-            return new JsonResult(new {TextBlock = textBlock});
-
-        return new JsonResult(new {TextBlock = "Nonetext"});
+            return Ok(textBlock);
+        
+        return NotFound();
     }
 
     [HttpPost]
     [Route("add")]
     public async Task<IActionResult> AddNewPost([FromBody] PostTextBlockRequest newPost)
     {
-        User user = await _userService.EnsureUserCreated(userName: newPost.UserName);
-
-        var textBlockToAdd = new NewTextBlock(
-            userName: newPost.UserName, 
-            text: newPost.TextBlock,
-            user: user
-        );
-
-        (bool postAddingSuccessful, string hashId) = await _dbService.AddNewPostAsync(textBlockToAdd);
+        bool postAddingSuccessful;
+        string hashId;
         
-        if(postAddingSuccessful)
+        if (HttpContext.User?.Identity?.IsAuthenticated ?? false)
         {
-            return Ok(hashId);
+            var userName = HttpContext.User.Identity.Name;
+            if (!_userService.IsUserExist(userName!, out User existingUser))
+            {
+                return RedirectToRoute("/logout");
+                throw new Exception("User logged in, but could not found in DB");
+            }
+
+            (postAddingSuccessful, hashId) = await _dbService.AddTextBlockAsync(newPost, user: existingUser);
+        }
+        else
+        {
+            (postAddingSuccessful, hashId) = await _dbService.AddTextBlockAsync(newPost, user: null);
         }
 
-        return StatusCode(StatusCodes.Status400BadRequest);
+        if (postAddingSuccessful)
+        {
+            return Ok(new {postId = hashId});
+        }
+
+        return BadRequest();
     }
 
     [HttpPost]

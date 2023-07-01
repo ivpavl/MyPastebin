@@ -5,7 +5,7 @@ using MyPastebin.Data.Models.TextBlockModels;
 using MyPastebin.Data.Models.UserModels;
 
 namespace MyPastebin.Data.Services;
-public class DbService : IDataBase
+public class DbService //: IDataBase
 {
     private readonly MySqlConnection _db;
     public DbService()
@@ -48,7 +48,7 @@ public class DbService : IDataBase
         return (isSuccessful, userId);
     }
 
-    public async Task<(bool isSuccessful, string postHashId)> AddNewPostAsync(NewTextBlock newPost)
+    public async Task<(bool isSuccessful, string postHashId)> AddNewPostAsync(TextBlock newPost)
     {
         string queryString =
         "INSERT INTO textblocks (Text, HashId) "
@@ -92,10 +92,11 @@ public class DbService : IDataBase
     }
 
 
-    private void EnsureDbCreated()
-    {
-        throw new NotImplementedException();
-    }
+
+    // private void EnsureDbCreated()
+    // {
+    //     throw new NotImplementedException();
+    // }
     // private async void InitUsers()
     // {
     //     Console.WriteLine("Initing db!");

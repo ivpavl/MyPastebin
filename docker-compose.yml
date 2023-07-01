@@ -1,0 +1,44 @@
+version: '3.4'
+
+networks:
+  dev:
+    driver: bridge
+
+services:
+  mypastebinapp:
+    image: mypastebin-dev
+    depends_on:
+      - appdb
+    container_name: mypastebinapp-services 
+    ports:
+      - "8088:80"
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - ConnectionStrings__DefaultConnection=server=appdb;database=MyPastebin;user=root;password=12345678;
+      - ASPNETCORE_URLS=http://+:80
+    networks:
+      - dev
+    links:
+      - appdb
+
+  appdb:
+    image: mysql
+    container_name: appdb
+    restart: always
+    environment:
+      MYSQL_DATABASE: 'MyPastebin'
+      MYSQL_ROOT_PASSWORD: '12345678'
+    # ports:
+    #   # exposed:inside
+    #   - 3307:3306
+    expose:
+      - '3306'
+    volumes:
+      - dbdata:/var/lib/mysql
+    networks:
+      - dev
+
+volumes:
+    dbdata:
