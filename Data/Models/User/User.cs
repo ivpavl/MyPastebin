@@ -10,4 +10,14 @@ public class User
     public string HashedPassword {get; set;} = null!;
     public List<TextBlock> UsersTextBlocks {get; set;} = new();
 
+
+    public UserInfoModel ToUserInfoModel()
+    {
+        var response = new UserInfoModel()
+        {
+            UserName = UserName,
+            UserIp = UserIp,
+        };
+        return response;
+    }
 }

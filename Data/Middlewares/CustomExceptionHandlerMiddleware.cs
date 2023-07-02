@@ -1,6 +1,8 @@
 using System.Net;
 using System.Text.Json;
 using System.ComponentModel.DataAnnotations;
+using MyPastebin.Data.Exceptions;
+using System.Security.Authentication;
 
 namespace MyPastebin.Data.Middlewares
 {
@@ -29,12 +31,15 @@ namespace MyPastebin.Data.Middlewares
             var result = string.Empty;
             switch(exception)
             {
-                case ValidationException:
-                    code = HttpStatusCode.BadRequest;
-                    break;
-                case Exception:
+                case NotFoundException:
                     code = HttpStatusCode.NotFound;
-                    // result = JsonSerializer.Serialize("LOLOLO");
+                    break;
+                case AuthenticationException:
+                    code = HttpStatusCode.Unauthorized;
+                    // result = JsonSerializer.Serialize(exception.Message);
+                    break;
+                case RegisterException:
+                    code = HttpStatusCode.Conflict;
                     break;
             }
             context.Response.ContentType = "application/json";

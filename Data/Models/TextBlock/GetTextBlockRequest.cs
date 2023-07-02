@@ -8,5 +8,5 @@ public class GetTextBlockRequest
     public string HashId {get; set;} = null!;
 
     [FromHeader(Name = "Authorization")]
-    public string AuthToken {get; set;} = null!;
+    public string? AuthToken {get; set;} = null!;
 }

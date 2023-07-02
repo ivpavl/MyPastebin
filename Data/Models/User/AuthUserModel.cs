@@ -1,9 +1,17 @@
  
-namespace MyPastebin.Data.Models.UserModels
+namespace MyPastebin.Data.Models.UserModels;
+
+public class AuthUserModel
 {
-    public class AuthUserModel
+    public string UserName { get; set; } = null!;
+    public string Password { get; set; } = null!;
+public User ToUser(string hashedPassword)
+{
+    return new User()
     {
-        public string UserName { get; set; } = null!;
-        public string Password { get; set; } = null!;
-    }
+        UserName = UserName,
+        UserIp = "userIP",
+        HashedPassword = hashedPassword,
+    };
+}
 }

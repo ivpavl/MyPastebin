@@ -5,7 +5,7 @@ namespace MyPastebin.Data.Interfaces;
 
 public interface IUserService
 {
-    Task<(bool isSuccessful, User createdUser)> AddUserAsync(User newUser);
+    Task<User> AddUserAsync(User newUser);
     Task<bool> IsUserExistAsync(string userName);
     bool IsUserExist(string userName, out User existingUser);
     Task<User?> GetUserAsync(string userName);

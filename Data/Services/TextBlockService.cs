@@ -2,6 +2,7 @@ using MyPastebin.Data.Interfaces;
 using MyPastebin.Data.Models.TextBlockModels;
 using MyPastebin.Data.Models.UserModels;
 using Microsoft.EntityFrameworkCore;
+using MyPastebin.Data.Exceptions;
 
 namespace MyPastebin.Data.Services;
 public class TextBlockService : ITextBlockService
@@ -25,20 +26,18 @@ public class TextBlockService : ITextBlockService
         return newHash;
     }
 
-    public async Task<(bool isSuccessful, TextBlock textBlock)> GetTextBlockAsync(string postHashId)
+    public async Task<TextBlock> GetTextBlockAsync(string postHashId)
     {
-        var post = await _db.TextBlocks.FirstOrDefaultAsync(tb => tb.HashId == postHashId);
-        if(post is null)
-            return (false, null!);
+        var textBlock = await _db.TextBlocks.FirstOrDefaultAsync(tb => tb.HashId == postHashId);
 
-        if(DateTime.Now > post?.ExpireIn)
+        if(textBlock is null || DateTime.Now > textBlock?.ExpireIn)
         {
-            return (false, null!);
+            throw new NotFoundException(nameof(TextBlock), postHashId);
         }
 
-        return (true, post!);
+        return textBlock!;
     }
-    public async Task<(bool isSuccessful, string postHashId)> AddTextBlockAsync(PostTextBlockRequest newPost, User? user)
+    public async Task<string> AddTextBlockAsync(CreateTextBlockRequest newPost, User? user)
     {
         if(user is not null)
         {
@@ -47,19 +46,12 @@ public class TextBlockService : ITextBlockService
 
         var hash = GenerateUniqueHash();
 
-        var newTextBlock = new TextBlock()
-        {
-            Title = newPost.Title,
-            Text = newPost.TextBlock,
-            HashId = hash,
-            User = user,
-            ExpireIn = DateTimeFactory(newPost.ExpireIn),
-        };
+        var newTextBlock = newPost.ToTextBlock(hash, user, DateTimeFactory(newPost.ExpireIn));
 
         await _db.TextBlocks.AddAsync(newTextBlock);
         await _db.SaveChangesAsync();
 
-        return (true, hash);
+        return hash;
     }
 
     public IEnumerable<TextBlock> GetUserPosts(User user, int limitTextByChars = 0)

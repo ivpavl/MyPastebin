@@ -12,19 +12,11 @@ public class UserService : IUserService
         _db = db;
     }
 
-    public async Task<(bool isSuccessful, User createdUser)> AddUserAsync(User newUser)
+    public async Task<User> AddUserAsync(User newUser)
     {
-        try
-        {
-            await _db.Users.AddAsync(newUser); 
-            await _db.SaveChangesAsync();
-        }
-        catch
-        {
-            return (false, null)!;
-            // throw;
-        }
-        return (true, newUser);
+        await _db.Users.AddAsync(newUser); 
+        await _db.SaveChangesAsync();
+        return newUser;
     }
     public bool IsUserExist(string userName, out User existingUser)
     {

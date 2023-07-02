@@ -1,8 +1,10 @@
 using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Authentication;
 using MyPastebin.Data.Interfaces;
 using MyPastebin.Data.Models.UserModels;
 using MyPastebin.Data.Static;
+using MyPastebin.Data.Exceptions;
 using Microsoft.IdentityModel.Tokens;
 
 namespace MyPastebin.Data.Services;
@@ -22,29 +24,25 @@ public class AuthService : IAuthService
             {
                 return CreateJWTToken(user);
             }
-            throw new Exception("Wrong password!");
+            throw new AuthenticationException("Wrong password!");
         }
-        throw new Exception("User does not exist!");
+        throw new AuthenticationException("User does not exist!");
     }
 
-    public async Task<(string JwtToken, int MaxAge)> TryRegisteringAsync(AuthUserModel user)
+    public async Task<(string JwtToken, int MaxAge)> TryRegisteringAsync(AuthUserModel authUserModel)
     {
-        var isUserExist = _userService.IsUserExistAsync(userName: user.UserName);
+        var isUserExist = _userService.IsUserExistAsync(userName: authUserModel.UserName);
 
-        var hashedPassword = BCrypt.Net.BCrypt.HashPassword(user.Password);
-        var newUser = new User()
-        {
-            UserName = user.UserName,
-            UserIp = "userIP",
-            HashedPassword = hashedPassword,
-        };
+        var hashedPassword = BCrypt.Net.BCrypt.HashPassword(authUserModel.Password);
+
+        var newUser = authUserModel.ToUser(hashedPassword);
 
         if(!await isUserExist)
         {
             await _userService.AddUserAsync(newUser);
-            return CreateJWTToken(user);
+            return CreateJWTToken(authUserModel);
         }
-        throw new Exception("User already exist!");
+        throw new RegisterException("User already exist!");
     }
 
     private static bool VerifyPassword(string hashedPassword, string password)

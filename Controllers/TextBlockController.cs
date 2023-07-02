@@ -3,6 +3,7 @@ using MyPastebin.Data.Models.TextBlockModels;
 using MyPastebin.Data.Models.UserModels;
 using MyPastebin.Data.Interfaces;
 using MyPastebin.Data.Services;
+using MyPastebin.Data.Extensions;
 
 namespace MyPastebin.Controllers;
 
@@ -22,42 +23,23 @@ public class TextBlockController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> Get([FromQuery]GetTextBlockRequest request)
     {
-        (bool IsSuccessful, TextBlock textBlock) = await _dbService.GetTextBlockAsync(request.HashId);
-        if (IsSuccessful)
-            return Ok(textBlock);
-        
-        return NotFound();
+        var textBlock = await _dbService.GetTextBlockAsync(request.HashId);
+        return Ok(textBlock);
     }
 
     [HttpPost]
     [Route("add")]
-    public async Task<IActionResult> AddNewPost([FromBody] PostTextBlockRequest newPost)
+    public async Task<IActionResult> AddNewPost([FromBody] CreateTextBlockRequest newPost)
     {
-        bool postAddingSuccessful;
-        string hashId;
+        User? user = null;
         
-        if (HttpContext.User?.Identity?.IsAuthenticated ?? false)
+        if (this.IsUserAuthenticated())
         {
-            var userName = HttpContext.User.Identity.Name;
-            if (!_userService.IsUserExist(userName!, out User existingUser))
-            {
-                return RedirectToRoute("/logout");
-                throw new Exception("User logged in, but could not found in DB");
-            }
-
-            (postAddingSuccessful, hashId) = await _dbService.AddTextBlockAsync(newPost, user: existingUser);
+            user = await this.GetCurrentlyAuthenticatedUser(_userService);
         }
-        else
-        {
-            (postAddingSuccessful, hashId) = await _dbService.AddTextBlockAsync(newPost, user: null);
-        }
+        string textBlockHashId = await _dbService.AddTextBlockAsync(newPost, user: user);
 
-        if (postAddingSuccessful)
-        {
-            return Ok(new {postId = hashId});
-        }
-
-        return BadRequest();
+        return Ok(new {postId = textBlockHashId});
     }
 
     [HttpPost]

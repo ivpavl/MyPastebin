@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using MyPastebin.Data.Models.UserModels;
 using MyPastebin.Data.Interfaces;
+using MyPastebin.Data.Extensions;
 
 
 namespace MyPastebin.Controllers;
@@ -25,21 +26,8 @@ public class UserController : ControllerBase
     [Route("")]
     public async Task<IActionResult> GetUserInfo()
     {
-        var userName = (HttpContext?.User?.Identity?.Name) ?? throw new Exception("Authorized without username in claims");
-        var user = await _userService.GetUserAsync(userName) ?? throw new Exception("Authorized, but user not found");
-
-        // Mapper service?
-        // Mapper service?
-
-        var response = new UserInfoModel()
-        {
-            UserName = user.UserName,
-            UserIp = user.UserIp,
-        };
-
-        // Mapper service?
-        // Mapper service?
-
+        var user = await this.GetCurrentlyAuthenticatedUser(_userService);
+        var response = user.ToUserInfoModel();
         return Ok(response);
     }
 
@@ -48,10 +36,7 @@ public class UserController : ControllerBase
     public IActionResult Login([FromBody]AuthUserModel user)
     {
         (string token, int maxAge) = _authService.TryLoggingIn(user);
-        // if(token != string.Empty)
         return Ok(new {Token = token, MaxAge = maxAge});
-
-        // return BadRequest();
     }
 
     [HttpPost]
@@ -59,10 +44,7 @@ public class UserController : ControllerBase
     public async Task<IActionResult> Register([FromBody]AuthUserModel user)
     {
         (string token, int maxAge) = await _authService.TryRegisteringAsync(user);
-        // if(token != string.Empty)
         return Ok(new {Token = token, MaxAge = maxAge});
-
-        // return BadRequest();
     }
 
     [HttpPost]
@@ -76,14 +58,10 @@ public class UserController : ControllerBase
     [HttpGet]
     [Authorize]
     [Route("postlist")]
-    public IActionResult GetPostList()
+    public async Task<IActionResult> GetPostList()
     {
-        var userName = HttpContext?.User?.Identity?.Name ?? "";
-        if(_userService.IsUserExist(userName, out User user))
-        {
-            var postsList = _dbService.GetUserPosts(user);
-            return Ok(postsList);
-        }
-        throw new Exception("User logged in, but could not found in DB");
+        var user = await this.GetCurrentlyAuthenticatedUser(_userService);
+        var postsList = _dbService.GetUserPosts(user);
+        return Ok(postsList);
     }
 }
